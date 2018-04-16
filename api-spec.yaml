@@ -1,0 +1,804 @@
+swagger: '2.0'
+info:
+  title: BenchChain Marketplace API
+  description: |
+    API Specification for interacting with the Bench Blockchain Marketplace API.
+    Bench Marketplace instances allow service providers to register and track BenchChain Listener
+    and BenchChain Service nodes into a Service Marketplace, and allows other Bench users to search
+    and utilize services from these blockchains.
+  version: "1.0.0"
+schemes:
+  - https
+produces:
+  - application/json
+tags:
+  - name: BenchMarketplaceApi
+    description: Bench Blockchain Marketplace API
+    externalDocs:
+      url: https://docs.benchchain.com/
+securityDefinitions:
+  oauth:
+    type: oauth2
+    authorizationUrl: "https://marketplace.benchchain.com/api/auth/"
+    flow: implicit
+    scopes:
+      "account": "Access account data"
+security:
+  - oauth: []
+paths:
+  /:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get instance information.
+      description: Get Bench Marketplace instance information.
+      responses:
+        200:
+          description: Marketplace instance information.
+          schema:
+            $ref: "#/definitions/ServerInfo"
+  /health:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get Health of node.
+      description: Get application health information.
+      responses:
+        200:
+          description: Health information.
+          schema:
+            $ref: "#/definitions/Health"
+
+  /listenerCategories:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get Listener categories.
+      description: Get a list of available Listener categories.
+      responses:
+        200:
+          description: List of listener categories. Categories can be used to tag what blockchain listener consumes.
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["BTC", "ETH", "EOS"]
+
+  /listeners:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: List Blockchain Listeners
+      description: Gets a page of Blockchain Listeners.
+      parameters:
+        -
+          name: category
+          in: query
+          description: Blockchain Listener Category to filter by.
+          type: string
+        -
+          name: search
+          in: query
+          description: Search query.
+          type: string
+        -
+          name: pageSize
+          in: query
+          type: integer
+          default: 100
+          description: Number of items to return per page.
+        -
+          name: page
+          in: query
+          type: integer
+          description: Zero-offset page number to return.
+      responses:
+        200:
+          description: Page of Listeners
+          schema:
+            type: object
+            properties:
+              pageSize:
+                type: integer
+              page:
+                type: integer
+              totalItems:
+                type: integer
+              items:
+                type: array
+                items:
+                  $ref: "#/definitions/Listener"
+        400:
+          $ref: "#/responses/BadRequest"
+
+  /listeners/{id}:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get a Blockchain Listener
+      description: Gets detailed information for a particular Blockchain Listener.
+      parameters:
+       -
+          name: id
+          in: path
+          description: Blockchain Listener identifier
+          type: string
+          required: true
+      responses:
+        200:
+          $ref: '#/definitions/Listener'
+        404:
+          $ref: "#/responses/NotFound"
+
+
+  /serviceCategories:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get Service categories.
+      description: Get a list of available Service categories.
+      responses:
+        200:
+          description: List of categories Service provides.
+          schema:
+            type: array
+            items:
+              type: string
+            example: ["Transfer", "Computation", "Storage", "DNS", "Internet of Things"]
+
+  /services:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: List Services
+      description: Gets a page of Services.
+      parameters:
+        -
+          name: category
+          in: query
+          description: Services Category to filter by.
+          type: string
+        -
+          name: search
+          in: query
+          description: Search query.
+          type: string
+        -
+          name: pageSize
+          in: query
+          type: integer
+          default: 100
+          description: Number of items to return per page.
+        -
+          name: page
+          in: query
+          type: integer
+          description: Zero-offset page number to return.
+      responses:
+        200:
+          description: Page of Listeners
+          schema:
+            type: object
+            properties:
+              pageSize:
+                type: integer
+              page:
+                type: integer
+              totalItems:
+                type: integer
+              items:
+                type: array
+                items:
+                  $ref: "#/definitions/Service"
+        400:
+          $ref: "#/responses/BadRequest"
+
+  /services/{id}:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get Service
+      description: Gets detailed information for a particular Service.
+      parameters:
+       -
+          name: id
+          in: path
+          description: Service identifier
+          type: string
+          required: true
+      responses:
+        200:
+          $ref: '#/definitions/Service'
+        404:
+          $ref: "#/responses/NotFound"
+
+  /services/{id}/contracts:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get Service Contracts.
+      description: Get a page of Contracts created under the current Account.
+      parameters:
+        -
+          name: id
+          in: path
+          type: string
+          required: true
+        -
+          name: pageSize
+          in: query
+          type: integer
+          default: 100
+          description: Number of items to return per page.
+        -
+          name: page
+          in: query
+          type: integer
+          description: Zero-offset page number to return.
+      responses:
+        200:
+          description: Page of Services
+          schema:
+            type: object
+            properties:
+              pageSize:
+                type: integer
+              page:
+                type: integer
+              totalItems:
+                type: integer
+              items:
+                type: array
+                items:
+                  $ref: "#/definitions/Service"
+        404:
+          $ref: "#/responses/NotFound"
+
+    post:
+      tags: [BenchMarketplaceApi]
+      summary: Create Service Contract.
+      description: Creates a new Service Contract under the current Account.
+      parameters:
+        -
+          name: id
+          in: path
+          type: string
+          required: true
+        -
+          name: CreateContractRequest
+          in: body
+          description: >
+            The request to create a new Service Contract. Arguments must match the inputSchema
+            defined by the Service or a validation error will be returned.
+          schema:
+            type: object
+            properties:
+              correlationId:
+                type: string
+              arguments:
+                type: object
+      responses:
+        200:
+          $ref: "#/definitions/Contract"
+        400:
+          $ref: "#/responses/BadRequest"
+        404:
+          $ref: "#/responses/NotFound"
+
+  /contracts:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get Service Contracts.
+      description: Get a page of Contracts created under the current Account.
+      parameters:
+        -
+          name: serviceId
+          in: query
+          type: string
+          description: Fitler by Service Identifier
+        -
+          name: pageSize
+          in: query
+          type: integer
+          default: 100
+          description: Number of items to return per page.
+        -
+          name: page
+          in: query
+          type: integer
+          description: Zero-offset page number to return.
+      responses:
+        200:
+          description: Page of Contracts
+          schema:
+            type: object
+            properties:
+              pageSize:
+                type: integer
+              page:
+                type: integer
+              totalItems:
+                type: integer
+              items:
+                type: array
+                items:
+                  $ref: "#/definitions/Contract"
+        404:
+          $ref: "#/responses/NotFound"
+
+  /contracts/{id}:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get Contract
+      description: Gets detailed information for a particular Contract.
+      parameters:
+       -
+          name: id
+          in: path
+          description: Contract identifier
+          type: string
+          required: true
+      responses:
+        200:
+          $ref: '#/definitions/Contract'
+        404:
+          $ref: "#/responses/NotFound"
+
+  /contracts/{id}/cancel:
+    post:
+      tags: [BenchMarketplaceApi]
+      summary: Cancel Contract
+      description: Cancels a Contract.
+      parameters:
+       -
+          name: id
+          in: path
+          description: Contract identifier
+          type: string
+          required: true
+      responses:
+        200:
+          $ref: '#/definitions/ContractCancellation'
+        404:
+          $ref: "#/responses/NotFound"
+
+  /contracts/{id}/benPayments:
+    post:
+      tags: [BenchMarketplaceApi]
+      summary: Create Ben Payment
+      description: Adds an Ben Payment for a Contract. The Contract must support the benPayable interface.
+      parameters:
+        -
+          name: id
+          in: path
+          description: Contract identifier
+          type: string
+          required: true
+        -
+          name: CreateBenPaymentRequest
+          in: body
+          description: >
+            The request to pay for a Contract using the BenchCoin Wallet bound to the Account. A validation error
+            is returned if the BEN wallet has insufficient funds to pay for a Contract.
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [partial, full]
+              benAmount:
+                type: string
+            required:
+              - type
+      responses:
+        200:
+          $ref: '#/definitions/ContractCancellation'
+        400:
+          $ref: "#/responses/BadRequest"
+        404:
+          $ref: "#/responses/NotFound"
+
+  /account/users:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: List Account Users
+      description: Gets a page of Users registered under the current Marketplace Account.
+      parameters:
+        -
+          name: pageSize
+          in: query
+          type: integer
+          default: 100
+          description: Number of items to return per page.
+        -
+          name: page
+          in: query
+          type: integer
+          description: Zero-offset page number to return.
+      responses:
+        200:
+          description: Page of Users
+          schema:
+            type: object
+            properties:
+              pageSize:
+                type: integer
+              page:
+                type: integer
+              totalItems:
+                type: integer
+              items:
+                type: array
+                items:
+                  $ref: "#/definitions/User"
+        400:
+          $ref: "#/responses/BadRequest"
+
+  /account/benWallet:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: Get BEN Wallet.
+      description: Get BEN Wallet attached to the current Account.
+      responses:
+        200:
+          $ref: "#/definitions/BenWallet"
+        400:
+          $ref: "#/responses/BadRequest"
+
+  /account/benWallet/transactions:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: List Account BEN Wallet Transactions
+      description: Gets a page of BEN Wallet transactions for the current Account.
+      parameters:
+        -
+          name: pageSize
+          in: query
+          type: integer
+          default: 100
+          description: Number of items to return per page.
+        -
+          name: page
+          in: query
+          type: integer
+          description: Zero-offset page number to return.
+      responses:
+        200:
+          description: Page of BEN Wallet Transactions
+          schema:
+            type: object
+            properties:
+              pageSize:
+                type: integer
+              page:
+                type: integer
+              totalItems:
+                type: integer
+              items:
+                type: array
+                items:
+                  $ref: "#/definitions/BenWalletTransaction"
+
+  /account/listeners:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: List Account Blockchain Listeners
+      description: Gets a page of Blockchain Listeners registered under the current Account.
+      parameters:
+        -
+          name: category
+          in: query
+          description: Blockchain Listener Category to filter by.
+          type: string
+        -
+          name: search
+          in: query
+          description: Search query.
+          type: string
+        -
+          name: pageSize
+          in: query
+          type: integer
+          default: 100
+          description: Number of items to return per page.
+        -
+          name: page
+          in: query
+          type: integer
+          description: Zero-offset page number to return.
+      responses:
+        200:
+          description: Page of Blockchain Listeners
+          schema:
+            type: object
+            properties:
+              pageSize:
+                type: integer
+              page:
+                type: integer
+              totalItems:
+                type: integer
+              items:
+                type: array
+                items:
+                  $ref: "#/definitions/Listener"
+        400:
+          $ref: "#/responses/BadRequest"
+
+    post:
+      tags: [BenchMarketplaceApi]
+      summary: Create Blockchain Listener
+      description: Creates a Blockchain Listener registered under the current Account.
+      parameters:
+        - in: body
+          name: CreateListenerRequest
+          description: The request to register a new Blockchain Listener into the Marketplace.
+          schema:
+            type: object
+            properties:
+              url:
+                type: string
+                description: Blockchain Listener URL.
+            required:
+              - url
+      responses:
+        200:
+          description: The created Blockchain Listener
+          schema:
+            $ref: '#/definitions/Listener'
+        400:
+          $ref: "#/responses/BadRequest"
+
+  /account/services:
+    get:
+      tags: [BenchMarketplaceApi]
+      summary: List Account Services
+      description: Gets a page of Services registered under the current Account.
+      parameters:
+        -
+          name: category
+          in: query
+          description: Service Category to filter by.
+          type: string
+        -
+          name: search
+          in: query
+          description: Search query.
+          type: string
+        -
+          name: pageSize
+          in: query
+          type: integer
+          default: 100
+          description: Number of items to return per page.
+        -
+          name: page
+          in: query
+          type: integer
+          description: Zero-offset page number to return.
+      responses:
+        200:
+          description: Page of Services
+          schema:
+            type: object
+            properties:
+              pageSize:
+                type: integer
+              page:
+                type: integer
+              totalItems:
+                type: integer
+              items:
+                type: array
+                items:
+                  $ref: "#/definitions/Service"
+        400:
+          $ref: "#/responses/BadRequest"
+
+    post:
+      tags: [BenchMarketplaceApi]
+      summary: Create Account Service.
+      description: Register a new Blockchain Service under an Account.
+      parameters:
+        - in: body
+          name: CreateServiceRequest
+          description: The request to register a new Blockchain Service into the Marketplace.
+          schema:
+            type: object
+            properties:
+              url:
+                type: string
+                description: Service URL.
+            required:
+              - url
+      responses:
+        200:
+          description: The created Service.
+          schema:
+            $ref: '#/definitions/Service'
+        400:
+          $ref: "#/responses/BadRequest"
+
+responses:
+  BadRequest:
+    description: The request was invalid.
+    schema:
+      $ref: "#/definitions/ValidationError"
+  Unauthorized:
+    description: Authentication information is missing or invalid
+    schema:
+      $ref: "#/definitions/Error"
+  NotFound:
+    description: The specified resource was not found.
+    schema:
+      $ref: "#/definitions/NotFoundError"
+
+definitions:
+  Error:
+    type: object
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+  ValidationError:
+    type: object
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      fieldErrors:
+        type: array
+        items:
+          $ref: "#/definitions/FieldError"
+  FieldError:
+    type: object
+    properties:
+      field:
+        type: string
+      code:
+        type: string
+      message:
+        type: string
+  NotFoundError:
+    type: object
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+  Health:
+    type: object
+    properties:
+      status:
+        type: string
+        enum: [up, down]
+  ServerInfo:
+    type: object
+    properties:
+      name:
+        type: string
+      version:
+        type: string
+  Account:
+    type: object
+    properties:
+      id:
+        type: string
+      createdAt:
+        type: string
+        format: date-time
+  User:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      emailAddress:
+        type: string
+      status:
+        type: string
+      createdAt:
+        type: string
+        format: date-time
+  AccountApiKey:
+    type: object
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+      apiKey:
+        type: string
+      createdAt:
+        type: string
+        format: date-time
+
+  Listener:
+    type: object
+    properties:
+      id:
+        type: string
+      url:
+        type: string
+      name:
+        type: string
+      websiteUrl:
+        type: string
+      description:
+        type: string
+      authorizationType:
+        type: string
+        enum: [none, httpBasic]
+      minBenState:
+        type: string
+      dailyBenFee:
+        type: string
+      createdAt:
+        type: string
+        format: date-time
+  Service:
+    type: object
+    properties:
+      id:
+        type: string
+      url:
+        type: string
+      name:
+        type: string
+      version:
+        type: string
+      description:
+        type: string
+      instructions:
+        type: string
+        description: Usage instructions in basic html format.
+      websiteUrl:
+        type: string
+      type:
+        type: string
+        enum: ["onDemand", "channel", "subscription"]
+      inputSchema:
+        type: object
+        description: Contract input schema in JSON Schema format.
+      outputSchema:
+        type: object
+        description: Contract input schema in JSON Schema format.
+      createdAt:
+        type: string
+        format: date-time
+  Contract:
+    type: object
+    properties:
+      id:
+        type: string
+      serviceId:
+        type: string
+      status:
+        type: string
+        enum: ["pendingPayment", "active", "executed", "failed", "cancelled"]
+      results:
+        type: object
+        description: Contract results described by Service outputSchema.
+  ContractCancellation:
+    type: object
+    properties:
+      createdAt:
+        type: string
+        format: date-time
+
+  BenWallet:
+    type: object
+    properties:
+      address:
+        type: string
+      balance:
+        type: number
+      createdAt:
+        type: string
+        format: date-time
+  BenWalletTransaction:
+    type: object
+    properties:
+      amount:
+        type: number
+      createdAt:
+        type: string
+        format: date-time
+      benTransactionId:
+        type: string
+      confirmations:
+        type: number
