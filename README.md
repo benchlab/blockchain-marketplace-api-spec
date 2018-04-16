@@ -1,7 +1,7 @@
 # API Specification for Bench Blockchain Marketplace
 
 The official Swagger API Specification for Bench's Decentralized Blockchain Marketplace. <br />
-Official API docs will be available here soon: https://docs.benchchain.com/marketplace/(https://benchchain.com/marketplace) 
+Official API docs will be available here soon: https://docs.benchchain.com/marketplace(https://benchchain.com/marketplace) 
 
 ## What Is The Bench Blockchain Marketplace?
 
